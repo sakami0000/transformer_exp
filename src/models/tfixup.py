@@ -316,11 +316,6 @@ class SaintEncoderDecoderModel(nn.Module):
         self.tfixup()
 
     def tfixup(self):
-        # def trunc_normal_(x, mean=0.0, std=1.0):
-        #     """Truncated normal initialization (approximation)"""
-        #     # From https://discuss.pytorch.org/t/implementing-truncated-normal-initializer/4778/12
-        #     return x.normal_().fmod_(2).mul_(std).add_(mean)
-
         # encoder
         for name, param in self.named_parameters():
             if name.endswith(".dense.weight"):
@@ -342,7 +337,7 @@ class SaintEncoderDecoderModel(nn.Module):
                 param.data.normal_(
                     mean=0.0,
                     std=(
-                        (9 * self.encoder_config.num_hidden_layers) ** (-1.0 / 4.0)
+                        (0.67 * self.encoder_config.num_hidden_layers) ** (-1.0 / 4.0)
                         * self.encoder_config.embedding_size ** (-0.5)
                     ),
                 )
