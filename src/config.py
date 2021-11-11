@@ -1,6 +1,7 @@
 import copy
 import yaml
 from pathlib import Path
+from typing import Any
 
 
 class Config(dict):
@@ -8,8 +9,14 @@ class Config(dict):
 
     __setattr__ = dict.__setitem__
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> Any:
         value = super().get(key)
+        if isinstance(value, dict):
+            return Config(value)
+        return value
+
+    def get(self, key: str, value: Any) -> Any:
+        value = super().get(key, value)
         if isinstance(value, dict):
             return Config(value)
         return value

@@ -178,6 +178,7 @@ class SaintSelfOutput(nn.Module):
 class SaintAttention(BertAttention):
     def __init__(self, config):
         super().__init__(config)
+        self.is_decoder = config.is_decoder
         self.head_scale = nn.Parameter(
             torch.ones((config.num_attention_heads,)), requires_grad=True
         )
@@ -221,8 +222,11 @@ class SaintAttention(BertAttention):
             past_key_value,
             output_attentions,
         )
-        context_layer = self.scale_heads(self_outputs[0])
-        context_layer = self.attention_layer_norm(context_layer)
+        context_layer = self_outputs[0]
+        if self.is_decoder:
+            context_layer = self.scale_heads(context_layer)
+            context_layer = self.attention_layer_norm(context_layer)
+
         attention_output = self.output(context_layer, residual)
         outputs = (attention_output,) + self_outputs[
             1:
@@ -250,6 +254,7 @@ class SaintIntermediate(nn.Module):
 class SaintOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
+        self.is_decoder = config.is_decoder
         self.layer_norm = nn.LayerNorm(
             config.intermediate_size, eps=config.layer_norm_eps
         )
@@ -257,7 +262,8 @@ class SaintOutput(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states, input_tensor):
-        hidden_states = self.layer_norm(hidden_states)
+        if self.is_decoder:
+            hidden_states = self.layer_norm(hidden_states)
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
         hidden_states = hidden_states + input_tensor

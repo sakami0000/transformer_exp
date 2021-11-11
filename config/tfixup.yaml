@@ -1,6 +1,7 @@
 seed: 1029
 device: cuda
 model: tfixup
+scheduler: noam
 
 valid_size: 2500000
 epoch_valid_size: 1000000

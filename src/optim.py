@@ -1,4 +1,4 @@
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import _LRScheduler, LambdaLR
 
 
 class NoamLR(_LRScheduler):
@@ -24,3 +24,14 @@ class NoamLR(_LRScheduler):
             last_epoch ** (-0.5), last_epoch * self.warmup_steps ** (-1.5)
         )
         return [base_lr * scale for base_lr in self.base_lrs]
+
+
+def get_linear_schedule(optimizer, num_training_steps, last_epoch=-1):
+    def lr_lambda(current_step: int):
+        return max(
+            0.0,
+            float(num_training_steps - current_step)
+            / float(max(1, num_training_steps)),
+        )
+
+    return LambdaLR(optimizer, lr_lambda, last_epoch)

@@ -15,7 +15,7 @@ from transformers import BertConfig
 from src.config import Config
 from src.data import get_user_sequences, TrainDataset, ValidDataset
 from src.evaluate import predict
-from src.optim import NoamLR
+from src.optim import NoamLR, get_linear_schedule
 from src.utils import set_seed, timer, line_notification
 from src.validation import virtual_time_split
 
@@ -136,8 +136,17 @@ def main():
 
         parameters = ContiguousParams(model.parameters())
         optimizer = optim.Adam(parameters.contiguous(), **config.optimizer_params)
-        scheduler = NoamLR(optimizer, warmup_steps=config.warmup_steps)
         loss_ema = None
+
+        if config.scheduler == "noam":
+            scheduler = NoamLR(optimizer, warmup_steps=config.warmup_steps)
+        elif config.scheduler == "linear":
+            total_steps = (len(train_loader) * config.n_epochs) // config.get(
+                "gradient_accumulation_steps", 1
+            )
+            scheduler = get_linear_schedule(optimizer, num_training_steps=total_steps)
+        else:
+            raise ValueError(f"Unknown scheduler: {config.scheduler}")
 
         for epoch in range(config.n_epochs):
             epoch_start_time = time.time()
